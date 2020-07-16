@@ -18,10 +18,12 @@ model_load_state = st.text('Loading models...')
 model_load_state.text('Model Loaded!')
 
 uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+
 if uploaded_file is not None:
     # Using PIL
     disp_image = Image.open(uploaded_file)
-    st.image(disp_image, caption='Uploaded Image.')
+    # st.image(disp_image, caption='Uploaded Image.')
+    prob = st.slider('Minimum Probability of Detections:',min_value=0.0,max_value=1.0,value=0.6)
     image = np.array(disp_image)
     image = image[:, :, ::-1].copy() 
     (h,w) = image.shape[:2]
@@ -34,20 +36,20 @@ if uploaded_file is not None:
 
     #sending the blob through the network
     objects = 0
+    
     for i in np.arange(0, detections.shape[2]):
 
             probability= detections[0,0,i,2]
 
-
-            if probability > 0.7:
+            if probability >= prob:
                 
                 objects+=1
-
                 nametag = int(detections[0,0,i,1])
                 box = detections[0,0,i, 3:7] * np.array([w,h,w,h])
                 (startX,startY, endX, endY) = box.astype("int")
                 
                 label = "{}:{:.2f}%".format(CLASSES[nametag], probability*100)
+                st.text(label)
                 print("--> {}".format(label))
                 cv2.rectangle(image, (startX, startY), (endX ,endY), COLORS[nametag], 2)
                 y= startY-15 if startY - 15 > 15 else startY + 15
@@ -55,9 +57,12 @@ if uploaded_file is not None:
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     output_image = Image.fromarray(image)
-    img_caption = "Objects Detected:"+str(objects)
+    model_state.markdown("** Objects Detected : "+str(objects)+"**")
     st.image(output_image)
-    model_state.text(img_caption)
+    
+    
+    
+    
 
 
 
